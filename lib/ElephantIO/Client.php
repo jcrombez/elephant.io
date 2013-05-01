@@ -32,6 +32,7 @@ class Client {
     private $read;
     private $checkSslPeer = true;
     private $debug;
+    private $cookies;
 
     public function __construct($socketIOUrl, $socketIOPath = 'socket.io', $protocol = 1, $read = true, $checkSslPeer = true, $debug = false) {
         $this->socketIOUrl = $socketIOUrl.'/'.$socketIOPath.'/'.(string)$protocol;
@@ -225,8 +226,13 @@ class Client {
         $ch = curl_init($this->socketIOUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
-        if (!$this->checkSslPeer)
+        if (!$this->checkSslPeer) {
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        }
+            
+        if (isset($this->cookies)) {
+            curl_setopt($ch, CURLOPT_COOKIE, $this->getSerializedCookies());
+        }
 
         $res = curl_exec($ch);
 
@@ -322,4 +328,30 @@ class Client {
         return true;
     }
 
+    /**
+     * @param array $cookies
+     */
+    public function setCookies($cookies)
+    {
+        $this->cookies = $cookies;
+    	return $this;
+    }
+
+    /**
+     * Return the value of the cookies attribute, serialized as follow :
+     * array('foo' => 'bar', 'oof' => 'rab') >>> "foo=bar; oof=rab"
+     * @return string
+     */
+    private function getSerializedCookies()
+    {
+        $cookies = '';
+        
+        foreach ($this->cookies as $k => $v) {
+            $cookies[] = $k.'='.$v;
+        }
+        
+        $cookies = implode('; ', $cookies);
+        	 
+        return $cookies;
+    }
 }
